@@ -1,0 +1,129 @@
+# ============================================================
+# 大文件：通过网盘或群文件共享，不进入 Git 历史
+# ============================================================
+
+# 视觉模型与推理引擎
+*.pt
+*.pth
+*.onnx
+*.weights
+*.ckpt
+*.safetensors
+*.tflite
+*.engine
+*.rknn
+*.kmodel
+*.blob
+
+# 数据集、录制数据和测试输出
+**/datasets/**
+**/recordings/**
+**/test-results/**
+**/artifacts/**
+!**/datasets/README.md
+!**/recordings/README.md
+!**/test-results/README.md
+!**/artifacts/README.md
+
+# 视频
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wmv
+
+# 压缩包
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+
+# 三维模型与机械工程文件
+*.step
+*.stp
+*.iges
+*.igs
+*.stl
+*.3mf
+*.sldprt
+*.sldasm
+*.SLDPRT
+*.SLDASM
+*.FCStd
+*.f3d
+
+# ============================================================
+# 编译、运行和开发工具产生的文件
+# ============================================================
+
+# 通用构建目录
+**/build/
+**/dist/
+**/Debug/
+**/Release/
+**/Objects/
+**/Listings/
+
+# 固件编译产物
+*.elf
+*.axf
+*.hex
+*.bin
+*.map
+*.o
+*.obj
+*.d
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# 日志、缓存和临时文件
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+.cache/
+
+# 编辑器和操作系统个人文件
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# AI 编程助手的本地说明与配置
+**/AGENTS.md
+**/AGENTS.local.md
+**/CLAUDE.md
+**/CLAUDE.local.md
+**/GEMINI.md
+**/GEMINI.local.md
+**/.agents/
+**/.codex/
+**/.claude/
+**/.cursor/
+**/.windsurf/
+**/.roo/
+**/.cursorrules
+**/.clinerules
+**/.windsurfrules
+**/.github/copilot-instructions.md
+
+# 本地环境变量和包含个人信息的配置
+.env
+.env.*
+!.env.example
+*.local.yaml
+*.local.yml
+*.local.json
