@@ -59,6 +59,8 @@ mobile-vision-tracking-platform/
 - 目标发现、跟踪、丢失、搜索和故障状态机；
 - 各子系统启动顺序、心跳和版本兼容规则。
 
+当前公共约定见：[坐标系与方向约定](interface/coordinate-system.md)。
+
 接口发生不兼容修改时，必须由受影响模块的负责人共同评审，并在同一次提交或合并请求中同步更新文档和相关实现。
 
 ### `mechanical/`
