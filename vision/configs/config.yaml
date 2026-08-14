@@ -1,0 +1,72 @@
+# V1 外框轮廓法检测参数（实验基线）。
+# 下一版内区矩形法实现时将使用独立配置段；本节键名暂时保持不变。
+target:
+  # 二值化方式
+  # "otsu" ：自动计算阈值
+  # "fixed"：使用下面 threshold_value 指定的固定阈值
+  threshold_mode: "otsu"
+  threshold_value: 80
+
+  # GaussianBlur 核大小
+  blur_kernel_size: 5
+
+  # 形态学核大小
+  morph_kernel_size: 5
+
+  # 闭运算次数
+  morph_close_iterations: 2
+
+  # 开运算次数
+  morph_open_iterations: 1
+
+  # 靶标面积至少/至多占整幅图像多少比例
+  min_area_ratio: 0.02
+  max_area_ratio: 0.95
+
+  # approxPolyDP 的逼近精度
+  # 数值越小越严格，数值越大越容易将复杂的轮廓近似为简单的多边形
+  approx_epsilon_ratio: 0.02
+
+  # 缩小的内部区域用于计算内部平均亮度
+  inner_scale: 0.75
+
+  # 黑框内部孔洞面积占外轮廓面积的合理范围
+  min_inner_area_ratio: 0.20
+  max_inner_area_ratio: 0.90
+
+  # 黑框和内部区域必须达到的最低亮度特征，范围为 0 ~ 1
+  min_contrast_score: 0.00
+  min_darkness_score: 0.10
+
+  # 靶标面积达到此比例时，面积评分记为满分
+  full_size_score_area_ratio: 0.25
+
+  # 最低可信度
+  min_confidence: 0.05
+
+camera:
+  # 目标帧数
+  target_frame_rate: 200.0
+
+  # 自动增益
+  # "Off" 关闭自动增益，使用下方的增益 gain
+  # "Once" 只启动一次自动增益
+  # "continue" 使用连续的自动增益
+  gain_auto: "Off"
+  gain: 15.0
+
+  # 曝光时间
+  exposure_auto: "Off"
+  exposure_time_us: 5000.0
+
+  # 自动白平衡
+  balance_white_auto: "Once"
+
+  # FPS 统计窗口
+  fps_window_seconds: 1.0
+
+  # 触发模式
+  trigger_mode: "Off"
+
+  # 获取帧数
+  acquisition_frame_rate_enable: True
