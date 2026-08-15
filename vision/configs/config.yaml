@@ -11,16 +11,16 @@ target:
   blur_kernel_size: 5
 
   # 形态学核大小
-  morph_kernel_size: 5
+  morph_kernel_size: 3
 
   # 闭运算次数
-  morph_close_iterations: 2
+  morph_close_iterations: 1
 
   # 开运算次数
-  morph_open_iterations: 1
+  morph_open_iterations: 2
 
   # 靶标面积至少/至多占整幅图像多少比例
-  min_area_ratio: 0.02
+  min_area_ratio: 0.01
   max_area_ratio: 0.95
 
   # approxPolyDP 的逼近精度
@@ -35,14 +35,72 @@ target:
   max_inner_area_ratio: 0.90
 
   # 黑框和内部区域必须达到的最低亮度特征，范围为 0 ~ 1
-  min_contrast_score: 0.00
-  min_darkness_score: 0.10
+  min_contrast_score: 0.10
+  min_darkness_score: 0.35
 
   # 靶标面积达到此比例时，面积评分记为满分
   full_size_score_area_ratio: 0.25
 
   # 最低可信度
-  min_confidence: 0.05
+  min_confidence: 0.30
+
+# V2 内部轮廓法检测参数
+target_v2:
+  # 二值化方式
+  # "otsu" ：自动计算阈值
+  # "fixed"：使用下面 threshold_value 指定的固定阈值
+  threshold_mode: "otsu"
+  threshold_value: 80
+
+  # GaussianBlur 核大小
+  blur_kernel_size: 3
+
+  # 形态学核大小
+  morph_kernel_size: 5
+
+  # 闭运算次数
+  morph_close_iterations: 2
+
+  # 开运算次数
+  morph_open_iterations: 1
+
+  # 白色内部占整个画面面积比值的合理范围
+  min_inner_area_ratio: 0.01
+  max_inner_area_ratio: 0.9
+
+  # approxPolyDP 的逼近精度
+  # 数值越小越严格，数值越大越容易将复杂的轮廓近似为简单的多边形
+  approx_epsilon_ratio: 0.02
+
+  # 扩大外部区域用于计算外侧是否为黑框
+  outer_scale: 1.12
+
+  # 最小可接受的内部白色像素比例
+  min_inner_white_ratio: 0.9
+
+  # 最小可接受的外侧黑色像素比例
+  min_outer_dark_ratio: 0.7
+
+  # 靶标面积达到此比例时，面积评分记为满分
+  full_size_score_area_ratio: 0.25
+
+  # 内外部亮度差达到此数值时，对比度评分记为满分
+  full_size_score_contrast: 150.0
+
+  # 面积得分权重
+  area_score_weight: 0.1
+
+  # 白色像素占比得分权重
+  white_score_weight: 0.3
+
+  # 黑色像素占比得分权重
+  dark_score_weight: 0.4
+
+  # 外框和内部亮度对比得分权重
+  contrast_score_weight: 0.2
+
+  # 最低可信度
+  min_confidence: 0.30
 
 camera:
   # 目标帧数

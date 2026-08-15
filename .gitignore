@@ -90,6 +90,7 @@ venv/
 *.tmp
 *.temp
 *.bak
+vision/data/inner_region_binary.png
 *.swp
 *.swo
 *~

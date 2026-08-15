@@ -13,9 +13,11 @@
 | `latest_frame_buffer.py` | 在线程间传递最新一帧，主动丢弃来不及处理的旧帧 | 实时低延迟方案 |
 | `camera_worker.py` | 在后台线程中管理相机生命周期并持续发布帧 | 已用于实时测试 |
 | `outer_frame_target_detector.py` | V1 外框轮廓法靶标检测器 | 可运行的实验基线 |
+| `inner_region_target_detector.py` | V2 内区矩形法靶标检测器 | 可运行的实验版本 |
 | `MvImport/` | 海康 MVS SDK 的 Python 绑定 | 第三方随附代码，不在此处维护 |
 
-计划中的 V2 内区矩形检测器尚未实现，设计方向记录在上级 README 中。
+V2 当前用于检测黑框内部的亮色矩形，并验证候选四边形外侧的暗色窄带；算法说明
+和静态、实时测试命令记录在上级 README 中。
 
 ## 数据流与职责
 
@@ -25,9 +27,11 @@ HikCamera.grab()
         ▼
 CameraWorker ──publish──> LatestFrameBuffer
                                   │ 最新 FramePacket
-                                  ▼
-                       OuterFrameTargetDetector.detect()
-                                  │
+                    ┌─────────────┴─────────────┐
+                    ▼                           ▼
+       OuterFrameTargetDetector      InnerRegionTargetDetector
+                    │                           │
+                    └─────────────┬─────────────┘
                                   ▼
                            TargetDetection
 ```
@@ -35,6 +39,8 @@ CameraWorker ──publish──> LatestFrameBuffer
 - `CameraWorker` 所在线程独占相机对象；检测与 OpenCV 窗口绘制在消费线程执行。
 - `LatestFrameBuffer` 是单槽缓冲区，不是帧队列。消费者处理较慢时会跳帧，以
   保证拿到的画面尽可能新；录像和逐帧分析应另外使用队列。
+- 两个检测器均为无帧间状态的单帧算法，使用相同输入输出接口；调用程序按实验
+  需要选择其中一个，不应在同一实时循环中无目的地重复处理同一帧。
 - `FramePacket.timestamp` 当前由 `time.perf_counter()` 产生，单位为秒，只用于
   计算进程内时间间隔和延迟，不可作为日期时间或跨设备同步时间。
 - 像素坐标遵循 OpenCV 约定：原点在左上角，`x/u` 向右，`y/v` 向下。三维坐标、
@@ -69,4 +75,6 @@ open -> start -> grab（循环）-> stop -> close
 ## 当前限制
 
 - V1 检测器依赖黑色外框与背景分离，在暗背景和光照不均的纸质靶标场景中稳定性
-  有限。详细原因与 V2 规划见 [`vision/README.md`](../README.md)。
+  有限。详细原因与 V2 说明见 [`vision/README.md`](../README.md)。
+- V2 检测器不依赖黑框外侧背景，但仅靠亮色四边形和外侧暗色窄带无法区分所有
+  暗背景中的普通亮色矩形，现阶段仍属于实验算法。
