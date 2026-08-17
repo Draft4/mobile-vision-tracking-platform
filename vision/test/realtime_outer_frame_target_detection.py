@@ -20,7 +20,15 @@ def load_config():
         return yaml.safe_load(file)
 
 
-def draw_detection(frame, result, frame_id, detect_ms, latency_ms):
+def draw_detection(
+    frame,
+    result,
+    frame_id,
+    detect_ms,
+    latency_ms,
+    camera_fps,
+    detection_fps,
+):
     """在原始画面的副本上绘制检测结果。"""
     display_frame = frame.copy()
     has_target = (
@@ -84,6 +92,19 @@ def draw_detection(frame, result, frame_id, detect_ms, latency_ms):
         (0, 255, 255),
         2,
     )
+    camera_fps_text = "--" if camera_fps is None else f"{camera_fps:.1f}"
+    detection_fps_text = (
+        "--" if detection_fps is None else f"{detection_fps:.1f}"
+    )
+    cv2.putText(
+        display_frame,
+        f"Camera FPS: {camera_fps_text}  Detection FPS: {detection_fps_text}",
+        (20, 105),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        (0, 255, 255),
+        2,
+    )
 
     return display_frame
 
@@ -113,6 +134,14 @@ def main():
     detector = OuterFrameTargetDetector(config)
 
     last_frame_id = -1
+    # 使用配置窗口平滑显示帧率；首个完整窗口结束前保持为 None。
+    fps_window_seconds = float(config["camera"]["fps_window_seconds"])
+    fps_window_start_time = None
+    fps_window_start_frame_id = None
+    fps_window_start_frame_timestamp = None
+    processed_frames_in_window = 0
+    camera_fps = None
+    detection_fps = None
 
     try:
         camera_worker.start()
@@ -131,12 +160,40 @@ def main():
             detect_ms = (time.perf_counter() - detect_start) * 1000.0
             latency_ms = (time.perf_counter() - frame_packet.timestamp) * 1000.0
 
+            # 帧号差反映相机采集速度，完成检测的帧数反映处理速度。
+            stats_now = time.perf_counter()
+            if fps_window_start_time is None:
+                fps_window_start_time = stats_now
+                fps_window_start_frame_id = frame_packet.frame_id
+                fps_window_start_frame_timestamp = frame_packet.timestamp
+            else:
+                processed_frames_in_window += 1
+                processing_elapsed = stats_now - fps_window_start_time
+                capture_elapsed = (
+                    frame_packet.timestamp - fps_window_start_frame_timestamp
+                )
+
+                if processing_elapsed >= fps_window_seconds:
+                    captured_frame_count = (
+                        frame_packet.frame_id - fps_window_start_frame_id
+                    )
+                    if capture_elapsed > 0.0:
+                        camera_fps = captured_frame_count / capture_elapsed
+                    detection_fps = processed_frames_in_window / processing_elapsed
+
+                    fps_window_start_time = stats_now
+                    fps_window_start_frame_id = frame_packet.frame_id
+                    fps_window_start_frame_timestamp = frame_packet.timestamp
+                    processed_frames_in_window = 0
+
             display_frame = draw_detection(
                 frame_packet.frame,
                 result,
                 frame_packet.frame_id,
                 detect_ms,
                 latency_ms,
+                camera_fps,
+                detection_fps,
             )
             # display_frame = resize_for_display(display_frame)
 

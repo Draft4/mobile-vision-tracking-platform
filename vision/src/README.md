@@ -10,6 +10,7 @@
 | --- | --- | --- |
 | `data_types.py` | 定义采集与检测模块共用的 `FramePacket`、`TargetDetection` | 公共数据接口 |
 | `hik_camera.py` | 封装海康 USB 工业相机的配置、同步取流和资源释放 | 已用于实机采集 |
+| `record_drone_video.py` | 直接调用工业相机逐帧录制无人机训练视频 | 可运行的采集工具 |
 | `latest_frame_buffer.py` | 在线程间传递最新一帧，主动丢弃来不及处理的旧帧 | 实时低延迟方案 |
 | `camera_worker.py` | 在后台线程中管理相机生命周期并持续发布帧 | 已用于实时测试 |
 | `outer_frame_target_detector.py` | V1 外框轮廓法靶标检测器 | 可运行的实验基线 |

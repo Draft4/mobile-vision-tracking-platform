@@ -152,6 +152,10 @@ class InnerRegionTargetDetector:
             band_gray_mean = np.mean(gray[band_pixels])
             contrast_gray_mean = abs(inner_gray_mean - band_gray_mean)
 
+            # 过滤内区与外侧暗带平均灰度差不足的候选。
+            if contrast_gray_mean < self.config["target_v2"]["min_score_contrast"]:
+                continue
+
             # 计算得分
             score = self._score_candidate(
                 area_ratio=area_ratio,
@@ -223,9 +227,7 @@ class InnerRegionTargetDetector:
         if DEBUG_BINARY_OUTPUT:
             cv2.imshow("Inner Region Binary", binary)
             binary_path = (
-                Path(__file__).resolve().parents[1]
-                / "data"
-                / "inner_region_binary.png"
+                Path(__file__).resolve().parents[1] / "data" / "inner_region_binary.png"
             )
             if not cv2.imwrite(str(binary_path), binary):
                 raise RuntimeError(f"二值图保存失败: {binary_path}")

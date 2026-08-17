@@ -53,10 +53,10 @@ target_v2:
   threshold_value: 80
 
   # GaussianBlur 核大小
-  blur_kernel_size: 3
+  blur_kernel_size: 5
 
   # 形态学核大小
-  morph_kernel_size: 5
+  morph_kernel_size: 3
 
   # 闭运算次数
   morph_close_iterations: 2
@@ -79,43 +79,46 @@ target_v2:
   min_inner_white_ratio: 0.9
 
   # 最小可接受的外侧黑色像素比例
-  min_outer_dark_ratio: 0.7
+  min_outer_dark_ratio: 0.85
 
   # 靶标面积达到此比例时，面积评分记为满分
-  full_size_score_area_ratio: 0.25
+  full_size_score_area_ratio: 0.20
+
+  # 最低可接受的内外部亮度差数值
+  min_score_contrast: 50.0
 
   # 内外部亮度差达到此数值时，对比度评分记为满分
-  full_size_score_contrast: 150.0
+  full_size_score_contrast: 200.0
 
   # 面积得分权重
   area_score_weight: 0.1
 
   # 白色像素占比得分权重
-  white_score_weight: 0.3
+  white_score_weight: 0.2
 
   # 黑色像素占比得分权重
-  dark_score_weight: 0.4
+  dark_score_weight: 0.6
 
   # 外框和内部亮度对比得分权重
-  contrast_score_weight: 0.2
+  contrast_score_weight: 0.1
 
   # 最低可信度
   min_confidence: 0.30
 
 camera:
-  # 目标帧数
+  # 期望采集帧率；当前相机封装仅校验该值，实际帧率以实时画面显示为准
   target_frame_rate: 200.0
 
   # 自动增益
   # "Off" 关闭自动增益，使用下方的增益 gain
   # "Once" 只启动一次自动增益
-  # "continue" 使用连续的自动增益
+  # "Continuous" 使用连续自动增益
   gain_auto: "Off"
   gain: 15.0
 
   # 曝光时间
   exposure_auto: "Off"
-  exposure_time_us: 5000.0
+  exposure_time_us: 2500.0
 
   # 自动白平衡
   balance_white_auto: "Once"
@@ -126,5 +129,5 @@ camera:
   # 触发模式
   trigger_mode: "Off"
 
-  # 获取帧数
+  # 是否启用相机采集帧率控制
   acquisition_frame_rate_enable: True
