@@ -93,9 +93,7 @@ def draw_detection(
         2,
     )
     camera_fps_text = "--" if camera_fps is None else f"{camera_fps:.1f}"
-    detection_fps_text = (
-        "--" if detection_fps is None else f"{detection_fps:.1f}"
-    )
+    detection_fps_text = "--" if detection_fps is None else f"{detection_fps:.1f}"
     cv2.putText(
         display_frame,
         f"Camera FPS: {camera_fps_text}  Detection FPS: {detection_fps_text}",
@@ -195,7 +193,7 @@ def main():
                 camera_fps,
                 detection_fps,
             )
-            # display_frame = resize_for_display(display_frame)
+            display_frame = resize_for_display(display_frame)
 
             cv2.imshow("Realtime Outer Frame Target Detection", display_frame)
             key = cv2.waitKey(1) & 0xFF

@@ -48,3 +48,51 @@ class TargetDetection:
     center: Optional[tuple[float, float]] = None
     area: float = 0.0
     confidence: float = 0.0
+
+
+@dataclass(frozen=True)
+class DroneDetectionCandidate:
+    """推理后端输出的一个无人机检测候选。
+
+    Attributes:
+        bbox_xyxy: 原始图像像素坐标中的 ``(x1, y1, x2, y2)`` 检测框。
+        confidence: 检测置信度，范围为 ``[0, 1]``。
+        class_id: 推理模型给出的类别编号。
+        class_name: 推理模型给出的类别名称。
+    """
+
+    bbox_xyxy: tuple[float, float, float, float]
+    confidence: float
+    class_id: int
+    class_name: str
+
+    @property
+    def center(self) -> tuple[float, float]:
+        """返回检测框的几何中心 ``(u, v)``。"""
+
+        x1, y1, x2, y2 = self.bbox_xyxy
+        return (x1 + x2) / 2.0, (y1 + y2) / 2.0
+
+
+@dataclass
+class DroneTrackingResult:
+    """一帧无人机锁定状态及其相对当前相机光轴的角误差。
+
+    ``found=False`` 时本帧没有可用于控制的新测量，检测框、中心、像素误差和
+    角误差均为 ``None``。短暂丢失期间 ``track_id`` 可继续保留，便于调用方
+    区分“等待原目标重现”和“尚未锁定目标”；不得把空角度解释为零误差。
+
+    角度单位为弧度，符号遵循公共坐标约定：偏航向左为正，仰角向上为正。
+    """
+
+    found: bool
+    frame_id: int
+    timestamp: float
+    track_id: Optional[int] = None
+    bbox_xyxy: Optional[tuple[float, float, float, float]] = None
+    center: Optional[tuple[float, float]] = None
+    confidence: float = 0.0
+    pixel_error_u: Optional[float] = None
+    pixel_error_v: Optional[float] = None
+    yaw_error_rad: Optional[float] = None
+    elevation_error_rad: Optional[float] = None

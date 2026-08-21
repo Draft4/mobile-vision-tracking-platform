@@ -1,5 +1,60 @@
 # 视觉模块
 
+## 相机内参自动标定
+
+标定工具使用项目现有的海康工业相机接口，适配 **8×11 个方格、单格边长
+15 mm** 的棋盘（OpenCV 检测 7×10 个内部角点）。安装海康 MVS SDK、OpenCV、
+NumPy 和 PyYAML，连接相机并确认 `vision/configs/config.yaml` 中的采集参数后运行：
+
+```powershell
+python -m vision.src.calibrate_camera_intrinsics
+```
+
+程序会实时显示检测角点和采样进度，不需要手动拍照。标定时请保持相机的分辨率、
+焦距和对焦状态不变，并缓慢移动棋盘，使它出现在画面中心、四周、不同距离，且
+包含正视、上下倾斜和左右倾斜的视角。模糊、过小、靠近画面边缘或与已有样本
+过于相似的画面不会被采纳。按 `q`、`Esc` 或 `Ctrl+C` 可取消，取消时不写结果。
+
+采样与视角覆盖达到要求后，程序会自动计算内参、剔除重投影误差异常的样本，
+并在总体 RMS 重投影误差不超过 1 像素时保存到：
+
+```text
+vision/configs/camera_intrinsics.json
+```
+
+结果包含图像尺寸、`fx/fy/cx/cy`、3×3 相机矩阵、按
+`[k1, k2, p1, p2, k3]` 排列的畸变系数、棋盘规格、有效样本数、重投影误差和
+UTC 标定时间。默认不会覆盖已有结果；确认需要重新标定时使用：
+
+```powershell
+python -m vision.src.calibrate_camera_intrinsics --force
+```
+
+也可通过 `--config` 和 `--output` 指定其他配置或输出位置。当前 JSON 只作为完整
+标定结果保存，不会自动修改 `config.yaml` 中的 `_fx/_fy/_cx/_cy`，现有位姿解算
+也尚未读取该 JSON 或使用其中的畸变系数。
+
+## 无人机图片采集
+
+安装海康 MVS SDK、连接 USB 工业相机并确认 `vision/configs/config.yaml` 中的
+`camera` 参数后，可实时预览画面并按键保存用于数据集制作的图片：
+
+```powershell
+python -m vision.src.capture_camera_images
+```
+
+先单击预览窗口使其获得键盘焦点；按 `p` 保存当前帧，按 `q`、`Esc` 或
+`Ctrl+C` 退出。预览画面可能为适应窗口而等比例缩小，但保存的是相机返回的原始
+分辨率图像，不包含文字或检测标记。图片默认以高质量 JPG 保存到
+`vision/datasets/captured_images/`，该目录已被 `.gitignore` 排除，不会进入
+Git 历史。
+
+可以指定输出目录，或使用 PNG 无损保存：
+
+```powershell
+python -m vision.src.capture_camera_images --output-dir D:/drone_images --format png
+```
+
 ## 无人机视频采集
 
 安装海康 MVS SDK、连接 USB 工业相机并确认 `vision/configs/config.yaml` 中的
@@ -26,6 +81,45 @@ python -m vision.src.record_drone_video --duration 60 --output vision/recordings
 播放速度变快，可以先通过实时检测画面中的 `Camera FPS` 确认实际值。脚本直接
 逐帧调用 `HikCamera.grab()`，不经过会丢弃旧帧的实时检测缓冲区。停止后会报告
 实际采集平均帧率及由相机帧号发现的跳帧数，便于检查 USB 带宽、曝光和帧率配置。
+
+## 无人机实时检测、单目标跟踪与角误差
+
+`drone_detector.py` 将模型推理结果转换为后端无关的检测候选，
+`drone_tracker.py` 负责单目标关联，并使用相机内参计算目标相对当前相机视轴的
+偏航与仰角误差。视觉层只返回测量结果，不直接发送电机命令，也不包含 PID、
+滤波、运动预测或云台限位逻辑。
+
+当前 Windows 验证后端使用 `vision/models/best.pt` 和 NVIDIA CUDA 设备 0。安装与
+模型训练环境匹配的 `ultralytics==8.4.121`，连接工业相机后运行：
+
+```powershell
+python -m vision.test.realtime_drone_tracking
+```
+
+程序以最新帧方式运行推理，画面会显示所有候选框、当前锁定框、相机标定主点、
+像素脱靶量、角误差、相机/检测帧率、当前延迟和滚动 P95 延迟。按 `q`、`Esc` 或
+`Ctrl+C` 退出。首帧从置信度至少为 0.50 的候选中选择离标定主点最近的目标；
+锁定后按前一帧目标中心进行轻量时序关联，并允许置信度降低至 0.25。
+
+公共输出由 `DroneTrackingResult` 表示，核心字段包括：
+
+- `found`、`track_id`、`frame_id` 和采集 `timestamp`；
+- 原图坐标中的 `bbox_xyxy`、`center`、`pixel_error_u/v`；
+- 弧度单位的 `yaw_error_rad` 和 `elevation_error_rad`。
+
+目标第一次漏检时便返回 `found=False`，检测框、像素误差和角误差均为 `None`，
+调用方不得继续使用上一帧角度。跟踪器会在内部保留锁定 0.5 秒；目标及时重现时
+沿用原 `track_id`，超时后重新选择目标并分配新编号。角度符号遵循公共坐标约定：
+目标在画面左侧时偏航为正，目标在画面上方时仰角为正。
+
+角度解算会严格检查运行画面尺寸是否等于 `camera.calibrated_image_width/height`
+（当前为 1280×1024），不一致时直接报错，避免错误缩放内参。第一版暂不应用畸变
+系数，并假定相机视轴与云台机械零位方向对齐；进入闭环前仍需完成相机—云台外参、
+电机方向、机械限位和低速安全联调。性能验证目标为检测处理不低于 20 Hz、P95
+端到端延迟不高于 100 ms；实际结果以演示画面和目标 Windows 设备实测为准。
+
+后续部署 RK3588 时新增实现同一 `detect(frame)` 接口的 RKNN 后端，并确保输出框
+映射回原始图像坐标即可；上层锁定和角度解算无需依赖 Ultralytics 或 PyTorch。
 
 ## 靶标检测方法
 

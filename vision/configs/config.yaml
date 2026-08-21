@@ -131,3 +131,57 @@ camera:
 
   # 是否启用相机采集帧率控制
   acquisition_frame_rate_enable: True
+
+  # 是否启用相机的 gamma
+  gamma_enable: True
+  gamma_selector: "User"
+
+  # 相机的 gamma 值
+  gamma: 1.0
+
+  # 相机的像素格式
+  pixel_format: "BayerBG8"
+
+  # 相机的内参，由标定获得
+  # 未标定不要修改
+  _fx: 4053.4089595982196
+  _fy: 4196.932826227684
+  _cx:  691.38976838931
+  _cy: 554.8279133851983
+
+  # 上述内参对应的严格标定分辨率；运行画面尺寸不一致时禁止角度解算
+  calibrated_image_width: 1280
+  calibrated_image_height: 1024
+
+  # 靶标的长度和宽度 (cm)，测量得到
+  # 未测量不要修改
+  target_W: 16.75
+  target_L: 25.00
+
+  # 激光的外参标定（暂时设为0，后续进行标定时再修改为正确的数值）
+  oc: 0.0
+  dc: 0.0
+
+# 无人机单目标检测、关联与角度解算参数
+drone_tracking:
+  # 当前只实现 Ultralytics PT 后端；后续 RKNN 后端复用相同候选输出接口
+  backend: "ultralytics"
+  model_path: "models/best.pt"
+  class_name: "drone"
+  image_size: 640
+
+  # Windows + NVIDIA CUDA 实机验证配置
+  device: "0"
+  precision: "fp16"
+
+  # 初次锁定使用较高阈值，已锁定目标允许较低阈值维持
+  acquire_confidence: 0.50
+  maintain_confidence: 0.25
+  iou_threshold: 0.70
+  max_detections: 10
+
+  # 漏检后立即停止输出角误差，但在此时间内保留原目标锁定
+  reacquire_timeout_seconds: 0.5
+
+  # 相邻有效检测框中心的最大距离，占标定图像对角线的比例
+  association_distance_ratio: 0.10
