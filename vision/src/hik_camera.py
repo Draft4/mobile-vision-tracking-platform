@@ -74,6 +74,18 @@ class HikCamera:
         if not isinstance(camera_config["acquisition_frame_rate_enable"], bool):
             raise ValueError("acquisition_frame_rate_enable 必须为布尔值")
 
+        if not isinstance(camera_config["gamma_enable"], bool):
+            raise ValueError("gamma_enable 必须为布尔值")
+
+        if camera_config["gamma_selector"] not in {"User", "sRGB"}:
+            raise ValueError("gamma_selector 配置错误")
+
+        if camera_config["gamma"] <= 0.0:
+            raise ValueError("gamma 必须为正值")
+
+        if camera_config["pixel_format"] not in {"BayerBG8", "BayerGB8"}:
+            raise ValueError("pixel_format 只支持 BayerBG8 或 BayerGB8")
+
     def _check(self, ret, message):
         """把必要 SDK 调用的非零返回码转换为 Python 异常。"""
 
@@ -139,6 +151,22 @@ class HikCamera:
         self._set_bool_if_supported(
             "AcquisitionFrameRateEnable",
             self.config["camera"]["acquisition_frame_rate_enable"],
+        )
+
+        # 设置 gamma
+        self._set_bool_if_supported(
+            "GammaEnable", self.config["camera"]["gamma_enable"]
+        )
+
+        if self.config["camera"]["gamma_enable"]:
+            self._set_enum_if_supported(
+                "GammaSelector", self.config["camera"]["gamma_selector"]
+            )
+            self._set_float_if_supported("Gamma", self.config["camera"]["gamma"])
+
+        # 设置相机的像素格式
+        self._set_enum_if_supported(
+            "PixelFormat", self.config["camera"]["pixel_format"]
         )
 
     def open(self):

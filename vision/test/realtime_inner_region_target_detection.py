@@ -1,4 +1,4 @@
-"""海康相机 V1 外框轮廓法实时检测与可视化测试。"""
+"""海康相机 V2 内区矩形法实时检测与可视化测试。"""
 
 import time
 from pathlib import Path
@@ -8,8 +8,8 @@ import yaml
 
 from vision.src.camera_worker import CameraWorker
 from vision.src.hik_camera import HikCamera
+from vision.src.inner_region_target_detector import InnerRegionTargetDetector
 from vision.src.latest_frame_buffer import LatestFrameBuffer
-from vision.src.outer_frame_target_detector import OuterFrameTargetDetector
 
 
 def load_config():
@@ -93,7 +93,9 @@ def draw_detection(
         2,
     )
     camera_fps_text = "--" if camera_fps is None else f"{camera_fps:.1f}"
-    detection_fps_text = "--" if detection_fps is None else f"{detection_fps:.1f}"
+    detection_fps_text = (
+        "--" if detection_fps is None else f"{detection_fps:.1f}"
+    )
     cv2.putText(
         display_frame,
         f"Camera FPS: {camera_fps_text}  Detection FPS: {detection_fps_text}",
@@ -129,7 +131,7 @@ def main():
     camera = HikCamera(config)
     frame_buffer = LatestFrameBuffer()
     camera_worker = CameraWorker(camera, frame_buffer)
-    detector = OuterFrameTargetDetector(config)
+    detector = InnerRegionTargetDetector(config)
 
     last_frame_id = -1
     # 使用配置窗口平滑显示帧率；首个完整窗口结束前保持为 None。
@@ -195,7 +197,7 @@ def main():
             )
             display_frame = resize_for_display(display_frame)
 
-            cv2.imshow("Realtime Outer Frame Target Detection", display_frame)
+            cv2.imshow("Realtime Inner Region Target Detection", display_frame)
             key = cv2.waitKey(1) & 0xFF
             if key in (ord("q"), 27):
                 break

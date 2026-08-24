@@ -1,6 +1,6 @@
 """V1 外框轮廓法靶标检测器（实验基线）。
 
-方法流程：反色二值化、形态学处理、查找带内部子轮廓的黑色外框、
+方法流程：反色二值化、先开后闭的形态学处理、查找带内部子轮廓的黑色外框、
 四边形拟合，以及内外区域亮度评分。
 
 适用条件：黑框闭合且具有足够像素宽度，黑框外侧背景能够在二值图中
@@ -196,15 +196,6 @@ class OuterFrameTargetDetector:
         morph_size = self.config["target"]["morph_kernel_size"]
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (morph_size, morph_size))
 
-        # 闭运算
-        if self.config["target"]["morph_close_iterations"] > 0:
-            binary = cv2.morphologyEx(
-                binary,
-                cv2.MORPH_CLOSE,
-                kernel,
-                iterations=self.config["target"]["morph_close_iterations"],
-            )
-
         # 开运算
         if self.config["target"]["morph_open_iterations"] > 0:
             binary = cv2.morphologyEx(
@@ -212,6 +203,15 @@ class OuterFrameTargetDetector:
                 cv2.MORPH_OPEN,
                 kernel,
                 iterations=self.config["target"]["morph_open_iterations"],
+            )
+
+        # 闭运算
+        if self.config["target"]["morph_close_iterations"] > 0:
+            binary = cv2.morphologyEx(
+                binary,
+                cv2.MORPH_CLOSE,
+                kernel,
+                iterations=self.config["target"]["morph_close_iterations"],
             )
 
         # 需要现场观察阈值分割效果时，可临时取消下面一行的注释。

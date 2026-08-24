@@ -11,16 +11,16 @@ target:
   blur_kernel_size: 5
 
   # 形态学核大小
-  morph_kernel_size: 5
+  morph_kernel_size: 3
 
   # 闭运算次数
-  morph_close_iterations: 2
+  morph_close_iterations: 1
 
   # 开运算次数
-  morph_open_iterations: 1
+  morph_open_iterations: 2
 
   # 靶标面积至少/至多占整幅图像多少比例
-  min_area_ratio: 0.02
+  min_area_ratio: 0.01
   max_area_ratio: 0.95
 
   # approxPolyDP 的逼近精度
@@ -35,29 +35,90 @@ target:
   max_inner_area_ratio: 0.90
 
   # 黑框和内部区域必须达到的最低亮度特征，范围为 0 ~ 1
-  min_contrast_score: 0.00
-  min_darkness_score: 0.10
+  min_contrast_score: 0.10
+  min_darkness_score: 0.35
 
   # 靶标面积达到此比例时，面积评分记为满分
   full_size_score_area_ratio: 0.25
 
   # 最低可信度
-  min_confidence: 0.05
+  min_confidence: 0.30
+
+# V2 内部轮廓法检测参数
+target_v2:
+  # 二值化方式
+  # "otsu" ：自动计算阈值
+  # "fixed"：使用下面 threshold_value 指定的固定阈值
+  threshold_mode: "otsu"
+  threshold_value: 80
+
+  # GaussianBlur 核大小
+  blur_kernel_size: 5
+
+  # 形态学核大小
+  morph_kernel_size: 3
+
+  # 闭运算次数
+  morph_close_iterations: 2
+
+  # 开运算次数
+  morph_open_iterations: 1
+
+  # 白色内部占整个画面面积比值的合理范围
+  min_inner_area_ratio: 0.01
+  max_inner_area_ratio: 0.9
+
+  # approxPolyDP 的逼近精度
+  # 数值越小越严格，数值越大越容易将复杂的轮廓近似为简单的多边形
+  approx_epsilon_ratio: 0.02
+
+  # 扩大外部区域用于计算外侧是否为黑框
+  outer_scale: 1.12
+
+  # 最小可接受的内部白色像素比例
+  min_inner_white_ratio: 0.9
+
+  # 最小可接受的外侧黑色像素比例
+  min_outer_dark_ratio: 0.85
+
+  # 靶标面积达到此比例时，面积评分记为满分
+  full_size_score_area_ratio: 0.20
+
+  # 最低可接受的内外部亮度差数值
+  min_score_contrast: 50.0
+
+  # 内外部亮度差达到此数值时，对比度评分记为满分
+  full_size_score_contrast: 200.0
+
+  # 面积得分权重
+  area_score_weight: 0.1
+
+  # 白色像素占比得分权重
+  white_score_weight: 0.2
+
+  # 黑色像素占比得分权重
+  dark_score_weight: 0.6
+
+  # 外框和内部亮度对比得分权重
+  contrast_score_weight: 0.1
+
+  # 最低可信度
+  min_confidence: 0.30
 
 camera:
-  # 目标帧数
+  # 期望采集帧率；当前相机封装仅校验该值，实际帧率以实时画面显示为准
   target_frame_rate: 200.0
 
   # 自动增益
   # "Off" 关闭自动增益，使用下方的增益 gain
   # "Once" 只启动一次自动增益
-  # "continue" 使用连续的自动增益
-  gain_auto: "Off"
+  # "Continuous" 使用连续自动增益
+  gain_auto: "Once"
   gain: 15.0
 
   # 曝光时间
   exposure_auto: "Off"
-  exposure_time_us: 5000.0
+  exposure_time_us: 2500.0
 
   # 自动白平衡
   balance_white_auto: "Once"
@@ -68,5 +129,63 @@ camera:
   # 触发模式
   trigger_mode: "Off"
 
-  # 获取帧数
+  # 是否启用相机采集帧率控制
   acquisition_frame_rate_enable: True
+
+  # 是否启用相机的 gamma
+  gamma_enable: True
+  gamma_selector: "User"
+
+  # 相机的 gamma 值
+  gamma: 1
+
+  # 相机的像素格式
+  pixel_format: "BayerBG8"
+
+  # 相机内参当前为流程开发用初始值
+  # 完成精确标定后与下方五参数畸变系数整体替换
+  _fx: 3248.8022580137776
+  _fy: 3247.5100701942006
+  _cx: 603.0350579732549
+  _cy: 529.0243661915105
+
+  # 上述内参对应的严格标定分辨率；运行画面尺寸不一致时禁止角度解算
+  calibrated_image_width: 1280
+  calibrated_image_height: 1024
+
+  # OpenCV 标准五参数畸变：[k1, k2, p1, p2, k3]
+  # 当前为占位值，完成精确内参标定后与 _fx/_fy/_cx/_cy 一并替换
+  distortion_coefficients: [ -0.5570637963254096, 2.7362606246890326, 0.0013025282112577156, 0.0004232485387715764, -9.69509179890119]
+
+  # 靶标的长度和宽度 (cm)，测量得到
+  # 未测量不要修改
+  target_W: 16.75
+  target_L: 25.00
+# 激光束在相机光学坐标系中的直线参数，当前为待标定占位值
+laser:
+  origin_camera_m: [0.0, 0.0, 0.0]
+  direction_camera: [0.0, 0.0, 1.0]
+
+# 无人机单目标检测、关联与角度解算参数
+drone_tracking:
+  # 当前只实现 Ultralytics PT 后端；后续 RKNN 后端复用相同候选输出接口
+  backend: "ultralytics"
+  model_path: "models/best.pt"
+  class_name: "drone"
+  image_size: 640
+
+  # Windows + NVIDIA CUDA 实机验证配置
+  device: "0"
+  precision: "fp16"
+
+  # 初次锁定使用较高阈值，已锁定目标允许较低阈值维持
+  acquire_confidence: 0.50
+  maintain_confidence: 0.25
+  iou_threshold: 0.70
+  max_detections: 10
+
+  # 漏检后立即停止输出角误差，但在此时间内保留原目标锁定
+  reacquire_timeout_seconds: 0.5
+
+  # 相邻有效检测框中心的最大距离，占标定图像对角线的比例
+  association_distance_ratio: 0.10
