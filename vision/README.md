@@ -31,8 +31,43 @@ python -m vision.src.calibrate_camera_intrinsics --force
 ```
 
 也可通过 `--config` 和 `--output` 指定其他配置或输出位置。当前 JSON 只作为完整
-标定结果保存，不会自动修改 `config.yaml` 中的 `_fx/_fy/_cx/_cy`，现有位姿解算
-也尚未读取该 JSON 或使用其中的畸变系数。
+标定结果保存，不会自动修改 `config.yaml`；应将其中的 `_fx/_fy/_cx/_cy` 和五项
+畸变系数手动写入配置，后续位姿和激光像素解算会直接读取这些配置值。
+
+## 激光外参离线标定
+
+激光外参工具使用 V2 亮色内区四角估计靶面姿态，再由用户在放大窗口中点击
+激光点。每张图片点击 5 次并取中位数；全部有效命中点经过像素残差共识筛选和
+三维直线拟合，最终得到相机光学坐标系中的激光直线。先采集原始 PNG：
+
+```powershell
+python -m vision.src.capture_camera_images `
+  --output-dir vision/datasets/laser_calibration_images `
+  --format png `
+  --prefix laser
+```
+
+建议在 1～5 m 范围内采集至少 15 张，覆盖近、中、远距离，并保证相机、激光、
+分辨率、焦距和对焦状态不变。`camera.target_W/target_L` 必须对应 V2 检测的亮色
+内区尺寸，而不是 A4 外缘或黑框外沿。完成精确相机标定后，将同分辨率的
+`_fx/_fy/_cx/_cy` 和 `[k1,k2,p1,p2,k3]` 写入 `config.yaml`，再运行：
+
+```powershell
+python -m vision.src.calibrate_laser_extrinsics
+```
+
+全图窗口左键选择激光附近区域，放大窗口左键添加点击、右键撤销最后一次点击；
+`Enter` 确认，`R` 重做当前图片，`B` 返回全图重选，`S` 跳过，`Q` 或 `Esc`
+取消整次标定。点击结果只在正常完成时统一保存，中途取消不会写入或覆盖结果文件。
+
+默认结果写入 `vision/configs/laser_extrinsics.json`。文件包含每张图片的角点、
+靶标姿态、人工点击、三维命中点、内点状态、拟合/留一像素误差以及最终
+`origin_camera_m`、`direction_camera`。结果文件已存在时需使用 `--force` 才会
+覆盖。质量不达标时仍会保存外参并返回退出码 2，但终端和 JSON 会标记警告，
+不应直接写入正式配置；几何上无法拟合时只保存失败报告。
+
+输出的 `origin_camera_m` 是拟合直线上距相机光心最近的点，并非物理出射口；它
+与单位方向 `direction_camera` 共同定义激光直线，可手动复制到 `laser` 配置段。
 
 ## 无人机图片采集
 
@@ -54,6 +89,8 @@ Git 历史。
 ```powershell
 python -m vision.src.capture_camera_images --output-dir D:/drone_images --format png
 ```
+
+可通过 `--prefix` 指定输出文件名前缀；只允许字母、数字、下划线和连字符。
 
 ## 无人机视频采集
 

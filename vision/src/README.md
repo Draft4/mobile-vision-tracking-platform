@@ -11,6 +11,7 @@
 | `data_types.py` | 定义采集、靶标检测和无人机跟踪共用的数据结构 | 公共数据接口 |
 | `hik_camera.py` | 封装海康 USB 工业相机的配置、同步取流和资源释放 | 已用于实机采集 |
 | `calibrate_camera_intrinsics.py` | 自动筛选棋盘视角并计算、保存相机内参与畸变 | 可运行的标定工具 |
+| `calibrate_laser_extrinsics.py` | 离线点击激光点并鲁棒拟合相机坐标系激光直线 | 可运行的标定工具 |
 | `capture_camera_images.py` | 实时预览工业相机画面并按键保存原始分辨率图片 | 可运行的采集工具 |
 | `record_drone_video.py` | 直接调用工业相机逐帧录制无人机训练视频 | 可运行的采集工具 |
 | `latest_frame_buffer.py` | 在线程间传递最新一帧，主动丢弃来不及处理的旧帧 | 实时低延迟方案 |
@@ -19,6 +20,7 @@
 | `inner_region_target_detector.py` | V2 内区矩形法靶标检测器 | 可运行的实验版本 |
 | `drone_detector.py` | 定义后端无关的无人机检测接口及 Ultralytics CUDA 实现 | Windows 实机验证版本 |
 | `drone_tracker.py` | 单目标时序关联、丢失管理和相机视轴角误差解算 | 后端无关核心逻辑 |
+| `gimbal_protocol.py` | 将视觉模式、检测状态和角误差编码为固定长度 UART 数据帧 | 硬件无关协议编解码 |
 | `target_pose_estimator.py` | 根据靶标四角和相机内参解算 `R_CT`、`t_CT` | 位姿解算工具 |
 | `laser_pixel_predictor.py` | 根据激光外参和靶标位姿预测激光点像素坐标 | 几何预测工具 |
 | `MvImport/` | 海康 MVS SDK 的 Python 绑定 | 第三方随附代码，不在此处维护 |

@@ -8,6 +8,7 @@
 import argparse
 from datetime import datetime
 from pathlib import Path
+import re
 
 import cv2
 import yaml
@@ -44,7 +45,21 @@ def parse_args():
         default="jpg",
         help="保存格式：jpg 或 png（默认：jpg）",
     )
+    parser.add_argument(
+        "--prefix",
+        type=validate_prefix,
+        default="drone",
+        help="输出文件名前缀（默认：drone）",
+    )
     return parser.parse_args()
+
+
+def validate_prefix(value: str) -> str:
+    """检查文件名前缀，避免生成子目录或无效路径。"""
+
+    if re.fullmatch(r"[A-Za-z0-9_-]+", value) is None:
+        raise argparse.ArgumentTypeError("prefix 只允许字母、数字、下划线和连字符")
+    return value
 
 
 def load_config(config_path: Path):
@@ -75,12 +90,17 @@ def resize_for_display(frame, max_width=1280, max_height=800):
     )
 
 
-def build_image_path(output_dir: Path, image_format: str, frame_id: int):
+def build_image_path(
+    output_dir: Path,
+    image_format: str,
+    frame_id: int,
+    prefix: str = "drone",
+):
     """使用拍摄时间和相机帧号生成不易重复的文件名。"""
     captured_at = datetime.now()
     milliseconds = captured_at.microsecond // 1000
     filename = (
-        f"drone_{captured_at:%Y%m%d_%H%M%S}_{milliseconds:03d}_"
+        f"{prefix}_{captured_at:%Y%m%d_%H%M%S}_{milliseconds:03d}_"
         f"frame_{frame_id:08d}.{image_format}"
     )
     return output_dir / filename
@@ -123,6 +143,7 @@ def main():
                     output_dir,
                     args.image_format,
                     frame_packet.frame_id,
+                    args.prefix,
                 )
                 save_frame(frame_packet.frame, output_path, args.image_format)
                 saved_count += 1

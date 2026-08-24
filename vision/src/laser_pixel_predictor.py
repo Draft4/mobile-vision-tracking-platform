@@ -1,5 +1,6 @@
 """根据激光外参和靶标位姿预测激光点像素坐标。"""
 
+import cv2
 import numpy as np
 
 
@@ -44,7 +45,22 @@ def predict_laser_pixel(
     fy = float(camera_config["_fy"])
     cx = float(camera_config["_cx"])
     cy = float(camera_config["_cy"])
+    distortion = np.asarray(
+        camera_config["distortion_coefficients"], dtype=np.float64
+    ).reshape(-1)
+    if distortion.shape != (5,) or not np.all(np.isfinite(distortion)):
+        raise ValueError("distortion_coefficients 必须包含五个有限数值")
 
-    u = fx * hit_camera[0] / hit_camera[2] + cx
-    v = fy * hit_camera[1] / hit_camera[2] + cy
+    camera_matrix = np.array(
+        [[fx, 0.0, cx], [0.0, fy, cy], [0.0, 0.0, 1.0]],
+        dtype=np.float64,
+    )
+    projected, _ = cv2.projectPoints(
+        hit_camera.reshape(1, 3),
+        np.zeros(3, dtype=np.float64),
+        np.zeros(3, dtype=np.float64),
+        camera_matrix,
+        distortion,
+    )
+    u, v = projected.reshape(2)
     return float(u), float(v)

@@ -16,6 +16,7 @@ def make_config():
             "_fy": 800.0,
             "_cx": 500.0,
             "_cy": 400.0,
+            "distortion_coefficients": [0.0, 0.0, 0.0, 0.0, 0.0],
             "target_W": 20.0,
             "target_L": 10.0,
         }
@@ -82,6 +83,71 @@ class TargetGeometryTest(unittest.TestCase):
                 translation_target_to_camera=[0.0, 0.0, 2.0],
                 config=make_config(),
             )
+
+    def test_pose_estimator_uses_distortion_coefficients(self):
+        config = make_config()
+        config["camera"]["distortion_coefficients"] = [
+            0.08,
+            -0.03,
+            0.001,
+            -0.002,
+            0.005,
+        ]
+        object_points = np.array(
+            [
+                [-0.1, -0.05, 0.0],
+                [0.1, -0.05, 0.0],
+                [0.1, 0.05, 0.0],
+                [-0.1, 0.05, 0.0],
+            ],
+            dtype=np.float64,
+        )
+        camera_matrix = np.array(
+            [[1000.0, 0.0, 500.0], [0.0, 800.0, 400.0], [0.0, 0.0, 1.0]]
+        )
+        rotation_vector = np.array([0.1, -0.12, 0.03], dtype=np.float64)
+        translation = np.array([0.02, -0.01, 2.0], dtype=np.float64)
+        image_points, _ = cv2.projectPoints(
+            object_points,
+            rotation_vector,
+            translation,
+            camera_matrix,
+            np.asarray(config["camera"]["distortion_coefficients"]),
+        )
+
+        rotation, estimated_translation = estimate_target_pose(
+            image_points.reshape(4, 2), config
+        )
+        expected_rotation, _ = cv2.Rodrigues(rotation_vector)
+
+        np.testing.assert_allclose(rotation, expected_rotation, atol=1e-5)
+        np.testing.assert_allclose(estimated_translation, translation, atol=1e-5)
+
+    def test_laser_projection_uses_distortion_coefficients(self):
+        config = make_config()
+        distortion = np.array([0.1, -0.04, 0.002, -0.001, 0.01])
+        config["camera"]["distortion_coefficients"] = distortion.tolist()
+        camera_matrix = np.array(
+            [[1000.0, 0.0, 500.0], [0.0, 800.0, 400.0], [0.0, 0.0, 1.0]]
+        )
+        hit_camera = np.array([[0.2, 0.1, 2.0]], dtype=np.float64)
+        expected, _ = cv2.projectPoints(
+            hit_camera,
+            np.zeros(3),
+            np.zeros(3),
+            camera_matrix,
+            distortion,
+        )
+
+        actual = predict_laser_pixel(
+            laser_origin_camera=[0.0, 0.0, 0.0],
+            laser_direction_camera=[0.1, 0.05, 1.0],
+            rotation_target_to_camera=np.eye(3),
+            translation_target_to_camera=[0.0, 0.0, 2.0],
+            config=config,
+        )
+
+        np.testing.assert_allclose(actual, expected.reshape(2), atol=1e-9)
 
 
 if __name__ == "__main__":
